@@ -1,0 +1,44 @@
+# Define variables
+$resourceGroupName = "Texiio-RG-7-19-2024"
+$dnsZoneName = "simpledns.xyz"
+$outputCsvFile = "C:\path\to\output\DnsRecordSets.csv"  # Specify the path to save the CSV file
+
+# Ensure the directory exists
+$outputDir = [System.IO.Path]::GetDirectoryName($outputCsvFile)
+if (!(Test-Path -Path $outputDir)) {
+    New-Item -Path $outputDir -ItemType Directory | Out-Null
+}
+
+# Fetch DNS zone
+try {
+    Write-Output "Fetching DNS zone..."
+    $dnsZone = Get-AzDnsZone -ResourceGroupName $resourceGroupName -Name $dnsZoneName
+
+    # Fetch DNS record sets
+    Write-Output "Fetching DNS record sets..."
+    $dnsRecordSets = Get-AzDnsRecordSet -ResourceGroupName $resourceGroupName -ZoneName $dnsZoneName
+
+    # Convert record sets to a format suitable for CSV
+    Write-Output "Processing DNS record sets..."
+    $dnsRecordSetsForCsv = $dnsRecordSets | ForEach-Object {
+        $record = $_
+        [PSCustomObject]@{
+            Id                = $record.Id
+            Name              = $record.Name
+            ZoneName          = $record.ZoneName
+            ResourceGroupName = $record.ResourceGroupName
+            Ttl               = $record.Ttl
+            Etag              = $record.Etag
+            RecordType        = $record.RecordType
+            Records           = ($record.Records | ForEach-Object { $_.ToString() }) -join ", "
+            ProvisioningState = $record.ProvisioningState
+        }
+    }
+
+    # Export record sets to CSV
+    Write-Output "Exporting DNS record sets to CSV..."
+    $dnsRecordSetsForCsv | Export-Csv -Path $outputCsvFile -NoTypeInformation
+    Write-Output "DNS record sets have been exported to $outputCsvFile"
+} catch {
+    Write-Error "Failed to fetch DNS records or export to CSV. Error details: $_"
+}

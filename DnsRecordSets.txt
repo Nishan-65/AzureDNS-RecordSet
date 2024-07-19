@@ -1,0 +1,16 @@
+# Parameters
+$resourceGroupName = "Texiio-RG-7-19-2024"
+$dnsZoneName = "simpledns.xyz"
+
+# Fetch DNS zone and record sets
+try {
+    $dnsZone = Get-AzDnsZone -ResourceGroupName $resourceGroupName -Name $dnsZoneName
+    $dnsRecordSets = Get-AzDnsRecordSet -ResourceGroupName $resourceGroupName -ZoneName $dnsZoneName
+
+    # Display all details of record sets in the PowerShell console
+    $dnsRecordSets | Format-List
+
+    Write-Host "All DNS record set details have been displayed in the PowerShell console."
+} catch {
+    Write-Error "Failed to fetch DNS records. Please check your Azure configuration and permissions."
+}
